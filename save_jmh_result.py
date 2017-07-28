@@ -13,7 +13,7 @@ import json
 import random
 
 # You need to enter the real URL and have the server running
-CODESPEED_URL = 'http://localhost:8000/'
+DEFAULT_CODESPEED_URL = 'http://localhost:8000/'
 
 current_date = datetime.datetime.today()
 
@@ -26,6 +26,8 @@ parser.add_argument('--input', dest='input', required=False,
                     help='input csv file')
 parser.add_argument('--environment', dest='environment', required=True)
 parser.add_argument('--dry', dest='dry', action='store_true')
+parser.add_argument('--codespeed', dest='codespeed', default=DEFAULT_CODESPEED_URL,
+                    help='codespeed url, default: %s' % DEFAULT_CODESPEED_URL)
 
 def readData(args):
     results = []
@@ -77,19 +79,19 @@ def readData(args):
             })
     return results
 
-def add(data):
+def add(data, codespeedUrl):
     #params = urllib.urlencode(data)
     response = "None"
     try:
         f = urllib2.urlopen(
-            CODESPEED_URL + 'result/add/json/', urllib.urlencode(data))
+            codespeedUrl + 'result/add/json/', urllib.urlencode(data))
     except urllib2.HTTPError as e:
         print str(e)
         print e.read()
         return
     response = f.read()
     f.close()
-    print "Server (%s) response: %s\n" % (CODESPEED_URL, response)
+    print "Server (%s) response: %s\n" % (codespeedUrl, response)
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -98,4 +100,4 @@ if __name__ == "__main__":
     if args.dry:
         print data
     else:
-        add({'json': data})
+        add({'json': data}, args.codespeed)
