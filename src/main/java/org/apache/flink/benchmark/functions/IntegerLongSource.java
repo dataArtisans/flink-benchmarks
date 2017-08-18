@@ -41,12 +41,13 @@ public class IntegerLongSource extends RichParallelSourceFunction<IntegerLongSou
 
     @Override
     public void run(SourceContext<Record> ctx) throws Exception {
-        long counter = 0;
+        final int parallelism = getRuntimeContext().getNumberOfParallelSubtasks();
+        long counter = getRuntimeContext().getIndexOfThisSubtask();
 
         while (running && counter < numberOfElements) {
             synchronized (ctx.getCheckpointLock()) {
                 ctx.collectWithTimestamp(Record.of((int) (counter % numberOfKeys), counter), counter);
-                counter++;
+                counter += parallelism;
             }
         }
         running = false;
