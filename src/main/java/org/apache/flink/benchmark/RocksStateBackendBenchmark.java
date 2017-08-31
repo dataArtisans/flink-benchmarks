@@ -18,47 +18,59 @@
 
 package org.apache.flink.benchmark;
 
-import org.apache.flink.benchmark.functions.LongSource;
-import org.apache.flink.benchmark.functions.MultiplyByTwo;
-import org.apache.flink.benchmark.functions.SumReduce;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
+import org.apache.flink.benchmark.functions.IntLongApplications;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
 
-@OperationsPerInvocation(value = SumLongsBenchmark.RECORDS_PER_INVOCATION)
-public class SumLongsBenchmark extends BenchmarkBase {
+import java.io.IOException;
 
-	public static final int RECORDS_PER_INVOCATION = 7_000_000;
+import static org.openjdk.jmh.annotations.Scope.Thread;
+
+@OperationsPerInvocation(value = RocksStateBackendBenchmark.RECORDS_PER_INVOCATION)
+public class RocksStateBackendBenchmark extends StateBackendBenchmarkBase {
+	public static final int RECORDS_PER_INVOCATION = 2_000_000;
 
 	public static void main(String[] args)
 			throws RunnerException {
 		Options options = new OptionsBuilder()
 				.verbosity(VerboseMode.NORMAL)
-				.include(".*" + SumLongsBenchmark.class.getSimpleName() + ".*")
+				.include(".*" + RocksStateBackendBenchmark.class.getSimpleName() + ".*")
 				.build();
 
 		new Runner(options).run();
 	}
 
 	@Benchmark
-	public void benchmarkCount(Context context) throws Exception {
+	public void stateBackends(RocksStateBackendContext context) throws Exception {
+		IntLongApplications.reduceWithWindow(context.source, TumblingEventTimeWindows.of(Time.seconds(10_000)));
+		context.execute();
+	}
 
-		StreamExecutionEnvironment env = context.env;
-		DataStreamSource<Long> source = env.addSource(new LongSource(RECORDS_PER_INVOCATION));
+	@State(Thread)
+	public static class RocksStateBackendContext extends StateBackendContext {
+		@Param({"ROCKS", "ROCKS_INC"})
+		public StateBackend stateBackend = StateBackend.MEMORY;
 
-		source
-				.map(new MultiplyByTwo())
-				.windowAll(GlobalWindows.create())
-				.reduce(new SumReduce())
-				.print();
+		@Setup
+		public void setUp() throws IOException {
+			super.setUp(stateBackend, RECORDS_PER_INVOCATION);
+		}
 
-		env.execute();
+		@TearDown
+		public void tearDown() throws IOException {
+			super.tearDown();
+		}
 	}
 }

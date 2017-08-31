@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by pnowojski on 7/5/17.
  */
-class CollectSink<T> implements SinkFunction<T> {
+public class CollectSink<T> implements SinkFunction<T> {
 	public final List<T> result = new ArrayList<>();
 
 	@Override
