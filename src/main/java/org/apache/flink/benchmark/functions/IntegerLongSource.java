@@ -1,6 +1,7 @@
 package org.apache.flink.benchmark.functions;
 
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
+import org.apache.flink.streaming.api.watermark.Watermark;
 
 public class IntegerLongSource extends RichParallelSourceFunction<IntegerLongSource.Record> {
     public static final class Record {
@@ -48,6 +49,9 @@ public class IntegerLongSource extends RichParallelSourceFunction<IntegerLongSou
             synchronized (ctx.getCheckpointLock()) {
                 ctx.collectWithTimestamp(Record.of((int) (counter % numberOfKeys), counter), counter);
                 counter += parallelism;
+                if ((counter / parallelism) % (1024 * 16) == 0) {
+                    ctx.emitWatermark(new Watermark(counter));
+                }
             }
         }
         running = false;

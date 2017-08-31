@@ -54,7 +54,7 @@ public class MemoryStateBackendBenchmark extends StateBackendBenchmarkBase {
 
 	@Benchmark
 	public void stateBackends(MemoryStateBackendContext context) throws Exception {
-		IntLongApplications.reduceWithWindow(context.source, TumblingEventTimeWindows.of(Time.seconds(10_000)));
+		IntLongApplications.reduceWithWindow(context.source, TumblingEventTimeWindows.of(WindowBenchmarks.WINDOW_LENGTH));
 		context.execute();
 	}
 

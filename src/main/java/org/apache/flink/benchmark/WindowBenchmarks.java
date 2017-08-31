@@ -42,7 +42,11 @@ import java.io.IOException;
 @OperationsPerInvocation(value = WindowBenchmarks.RECORDS_PER_INVOCATION)
 public class WindowBenchmarks extends BenchmarkBase {
 
+	// IntegerLongSource produces records (logically) at rate 1 record per 1 ms, so 1_000_000 records will span over
+	// 1_000_000 milliseconds.
 	public static final int RECORDS_PER_INVOCATION = 7_000_000;
+	public static final Time WINDOW_LENGTH = Time.milliseconds(100_000);
+	public static final Time SLIDING_WINDOW_SLIDE = Time.milliseconds(10_000);
 
 	public static void main(String[] args)
 			throws RunnerException {
@@ -62,19 +66,19 @@ public class WindowBenchmarks extends BenchmarkBase {
 
 	@Benchmark
 	public void tumblingWindow(TimeWindowContext context) throws Exception {
-		IntLongApplications.reduceWithWindow(context.source, TumblingEventTimeWindows.of(Time.seconds(10_000)));
+		IntLongApplications.reduceWithWindow(context.source, TumblingEventTimeWindows.of(WINDOW_LENGTH));
 		context.execute();
 	}
 
 	@Benchmark
 	public void slidingWindow(TimeWindowContext context) throws Exception {
-		IntLongApplications.reduceWithWindow(context.source, SlidingEventTimeWindows.of(Time.seconds(10_000), Time.seconds(1000)));
+		IntLongApplications.reduceWithWindow(context.source, SlidingEventTimeWindows.of(WINDOW_LENGTH, SLIDING_WINDOW_SLIDE));
 		context.execute();
 	}
 
 	@Benchmark
 	public void sessionWindow(TimeWindowContext context) throws Exception {
-		IntLongApplications.reduceWithWindow(context.source, EventTimeSessionWindows.withGap(Time.seconds(500)));
+		IntLongApplications.reduceWithWindow(context.source, EventTimeSessionWindows.withGap(WINDOW_LENGTH));
 		context.execute();
 	}
 
