@@ -82,6 +82,12 @@ public class WindowBenchmarks extends BenchmarkBase {
 		context.execute();
 	}
 
+	@Benchmark
+	public void preAggregateTumblingWindow(TimeWindowContext context) throws Exception {
+		IntLongApplications.preAggregateWithTumblingWindow(context.source, TumblingEventTimeWindows.of(WINDOW_LENGTH));
+		context.execute();
+	}
+
 	public static class TimeWindowContext extends Context {
 		public final int numberOfElements = 1000;
 
