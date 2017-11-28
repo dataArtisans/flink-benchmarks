@@ -18,18 +18,12 @@
 
 package org.apache.flink.benchmark;
 
-import org.apache.flink.runtime.state.memory.MemoryStateBackend;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-
-import java.io.IOException;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.openjdk.jmh.annotations.Mode.Throughput;
@@ -46,27 +40,4 @@ import static org.openjdk.jmh.annotations.Scope.Thread;
 @Warmup(iterations = 10)
 @Measurement(iterations = 10)
 public class BenchmarkBase {
-	@State(Thread)
-	public static class Context {
-		public final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-		private final int parallelism = 1;
-		private final boolean objectReuse = true;
-
-		@Setup
-		public void setUp() throws IOException {
-			// set up the execution environment
-			env.setParallelism(parallelism);
-			env.getConfig().disableSysoutLogging();
-			if (objectReuse) {
-				env.getConfig().enableObjectReuse();
-			}
-
-			env.setStateBackend(new MemoryStateBackend());
-		}
-
-		public void execute() throws Exception {
-			env.execute();
-		}
-	}
 }
