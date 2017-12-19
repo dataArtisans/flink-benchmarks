@@ -18,11 +18,11 @@
 
 package org.apache.flink.benchmark;
 
-import org.apache.flink.runtime.io.network.benchmark.NetworkBenchmark;
+import org.apache.flink.streaming.runtime.io.benchmark.StreamNetworkPointToPointBenchmark;
 
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
-import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
@@ -32,49 +32,46 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.openjdk.jmh.annotations.Mode.AverageTime;
 import static org.openjdk.jmh.annotations.Scope.Thread;
 
 /**
- * JMH throughput benchmark runner.
+ * JMH latency benchmark runner.
  */
-@OperationsPerInvocation(value = NetworkBenchmarkExecutor.RECORDS_PER_INVOCATION)
-public class NetworkBenchmarkExecutor extends BenchmarkBase {
+@OutputTimeUnit(MILLISECONDS)
+@BenchmarkMode(AverageTime)
+public class StreamNetworkLatencyBenchmarkExecutor extends BenchmarkBase {
 
-	static final int RECORDS_PER_INVOCATION = 5_000_000;
+	private static final int RECORDS_PER_INVOCATION = 100;
 
 	public static void main(String[] args)
 			throws RunnerException {
 		Options options = new OptionsBuilder()
 				.verbosity(VerboseMode.NORMAL)
-				.include(".*" + NetworkBenchmarkExecutor.class.getSimpleName() + ".*")
+				.include(".*" + StreamNetworkLatencyBenchmarkExecutor.class.getSimpleName() + ".*")
 				.build();
 
 		new Runner(options).run();
 	}
 
 	@Benchmark
-	public void networkThroughput(MultiEnvironment context) throws Exception {
-		context.executeThroughputBenchmark(RECORDS_PER_INVOCATION);
+	public void networkLatency1to1(Environment context) throws Exception {
+		context.executeBenchmark(RECORDS_PER_INVOCATION, false);
 	}
 
 	/**
 	 * Setup for the benchmark(s).
 	 */
 	@State(Thread)
-	public static class MultiEnvironment extends StreamNetworkThroughputBenchmark {
-		@Param({"1", "50", "1000"})
-		public int channels = 100;
-
-		@Param({"1", "4"})
-		public int writers = 1;
-
+	public static class Environment extends StreamNetworkPointToPointBenchmark {
 		@Setup
 		public void setUp() throws Exception {
-			super.setUp(writers, channels);
+			super.setUp(10);
 		}
 
 		@TearDown
-		public void tearDown() throws Exception {
+		public void tearDown() {
 			super.tearDown();
 		}
 	}
