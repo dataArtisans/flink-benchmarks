@@ -58,7 +58,7 @@ def readData(args):
                 'commitid': args.commit,
                 'branch': args.branch,
                 'project': 'Flink',
-                'executable': 'Flink',
+                'executable': 'Flink-network',
                 'benchmark': name,
                 'environment': args.environment,
                 'lessisbetter': False,
