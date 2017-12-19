@@ -34,42 +34,48 @@ import org.openjdk.jmh.runner.options.VerboseMode;
 
 import static org.openjdk.jmh.annotations.Scope.Thread;
 
+/**
+ * JMH throughput benchmark runner.
+ */
 @OperationsPerInvocation(value = NetworkBenchmarkExecutor.RECORDS_PER_INVOCATION)
 public class NetworkBenchmarkExecutor extends BenchmarkBase {
 
-    public static final int RECORDS_PER_INVOCATION = 5_000_000;
+	static final int RECORDS_PER_INVOCATION = 5_000_000;
 
-    public static void main(String[] args)
-            throws RunnerException {
-        Options options = new OptionsBuilder()
-                .verbosity(VerboseMode.NORMAL)
-                .include(".*" + NetworkBenchmarkExecutor.class.getSimpleName() + ".*")
-                .build();
+	public static void main(String[] args)
+			throws RunnerException {
+		Options options = new OptionsBuilder()
+				.verbosity(VerboseMode.NORMAL)
+				.include(".*" + NetworkBenchmarkExecutor.class.getSimpleName() + ".*")
+				.build();
 
-        new Runner(options).run();
-    }
+		new Runner(options).run();
+	}
 
-    @Benchmark
-    public void networkThroughput(MultiEnvironment context) throws Exception {
-        context.executeThroughputBenchmark(RECORDS_PER_INVOCATION);
-    }
+	@Benchmark
+	public void networkThroughput(MultiEnvironment context) throws Exception {
+		context.executeThroughputBenchmark(RECORDS_PER_INVOCATION);
+	}
 
-    @State(Thread)
-    public static class MultiEnvironment extends NetworkBenchmark {
-        @Param({"1", "50", "1000"})
-        public int channels = 1000;
+	/**
+	 * Setup for the benchmark(s).
+	 */
+	@State(Thread)
+	public static class MultiEnvironment extends StreamNetworkThroughputBenchmark {
+		@Param({"1", "50", "1000"})
+		public int channels = 100;
 
-        @Param({"1", "4"})
-        public int writers = 1;
+		@Param({"1", "4"})
+		public int writers = 1;
 
-        @Setup
-        public void setUp() throws Exception {
-            super.setUp(writers, channels);
-        }
+		@Setup
+		public void setUp() throws Exception {
+			super.setUp(writers, channels);
+		}
 
-        @TearDown
-        public void tearDown() throws Exception {
-            super.tearDown();
-        }
-    }
+		@TearDown
+		public void tearDown() throws Exception {
+			super.tearDown();
+		}
+	}
 }
