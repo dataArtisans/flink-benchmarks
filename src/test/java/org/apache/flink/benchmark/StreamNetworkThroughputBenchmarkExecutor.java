@@ -32,6 +32,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
 
+import static org.apache.flink.util.Preconditions.checkState;
 import static org.openjdk.jmh.annotations.Scope.Thread;
 
 /**
@@ -62,18 +63,35 @@ public class StreamNetworkThroughputBenchmarkExecutor extends BenchmarkBase {
 	 */
 	@State(Thread)
 	public static class MultiEnvironment extends StreamNetworkThroughputBenchmark {
-		@Param({"1", "100"})
-		public int channels = 1;
 
-		@Param({"1", "4"})
-		public int writers = 1;
+		//Ideally we would like to run 1,100ms, 1000,1ms, 1000,100ms. However 1000,1ms is too slow to execute.
+		@Param({"1,100ms", "100,1ms", "1000,100ms"})
+		public String channelsFlushTimeout = "100,100ms";
 
-		@Param({"1", "100"})
-		public int flushTimeout = 1;
+		//Do not spam continuous benchmarking with number of writers parameter.
+		//@Param({"1", "4"})
+		public int writers = 4;
 
 		@Setup
 		public void setUp() throws Exception {
+			int channels = parseChannels(channelsFlushTimeout);
+			int flushTimeout = parseFlushTimeout(channelsFlushTimeout);
 			super.setUp(writers, channels, flushTimeout);
+		}
+
+		private static int parseFlushTimeout(String channelsFlushTimeout) {
+			String[] parameters = channelsFlushTimeout.split(",");
+			checkState(parameters.length >= 2);
+			String flushTimeout = parameters[1];
+
+			checkState(flushTimeout.endsWith("ms"));
+			return Integer.parseInt(flushTimeout.substring(0, flushTimeout.length() - 2));
+		}
+
+		private static int parseChannels(String channelsFlushTimeout) {
+			String[] parameters = channelsFlushTimeout.split(",");
+			checkState(parameters.length >= 1);
+			return Integer.parseInt(parameters[0]);
 		}
 
 		@TearDown
