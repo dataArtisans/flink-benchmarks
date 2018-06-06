@@ -19,12 +19,16 @@
 package org.apache.flink.benchmark;
 
 import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple6;
+import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.streaming.api.environment.LocalStreamEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
+import org.apache.flink.types.Row;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
@@ -108,6 +112,33 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 		env.execute();
 	}
 
+	@Benchmark
+	@OperationsPerInvocation(value = PojoSerializationBenchmarks.RECORDS_PER_INVOCATION)
+	public void testAvroSerializer() throws Exception {
+		LocalStreamEnvironment env =
+				StreamExecutionEnvironment.createLocalEnvironment(4);
+		env.getConfig().enableForceAvro();
+
+		env.addSource(new PojoSource(RECORDS_PER_INVOCATION, 10))
+				.rebalance()
+				.addSink(new DiscardingSink<>());
+
+		env.execute();
+	}
+
+	@Benchmark
+	@OperationsPerInvocation(value = PojoSerializationBenchmarks.RECORDS_PER_INVOCATION)
+	public void testRowSerializer() throws Exception {
+		LocalStreamEnvironment env =
+				StreamExecutionEnvironment.createLocalEnvironment(4);
+
+		env.addSource(new RowSource(RECORDS_PER_INVOCATION, 10))
+				.rebalance()
+				.addSink(new DiscardingSink<>());
+
+		env.execute();
+	}
+
 	private abstract static class BaseSource<T> implements ParallelSourceFunction<T> {
 		private static final long serialVersionUID = 8318018060123048234L;
 
@@ -147,8 +178,7 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 									new MyOperation(2, "op2"),
 									new MyOperation(3, "op3")},
 							new int[] {1, 2, 3},
-							null);
-
+							"null");
 
 			while (--remainingEvents >= 0) {
 				synchronized (out.getCheckpointLock()) {
@@ -184,8 +214,7 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 									new MyOperation(2, "op2"),
 									new MyOperation(3, "op3")},
 							new int[] {1, 2, 3},
-							null).toTuple();
-
+							"null").toTuple();
 
 			while (--remainingEvents >= 0) {
 				synchronized (out.getCheckpointLock()) {
@@ -199,6 +228,57 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 		}
 	}
 
+	private static class RowSource extends BaseSource<Row> implements ResultTypeQueryable<Row> {
+		private static final long serialVersionUID = 2941333602938145526L;
+
+		RowSource(int numEvents, int numKeys) {
+			super(numEvents, numKeys);
+		}
+
+		@Override
+		public void run(SourceContext<Row> out) {
+
+			int keyId = 0;
+
+			Row template =
+					new MyPojo(
+							keyId,
+							"myName",
+							new String[] {"op1", "op2", "op3", "op4"},
+							new MyOperation[] {
+									new MyOperation(1, "op1"),
+									new MyOperation(2, "op2"),
+									new MyOperation(3, "op3")},
+							new int[] {1, 2, 3},
+							"null").toRow();
+
+			while (--remainingEvents >= 0) {
+				synchronized (out.getCheckpointLock()) {
+					template.setField(0, keyId++);
+					out.collect(template);
+				}
+				if (keyId >= numKeys) {
+					keyId = 0;
+				}
+			}
+		}
+
+		@Override
+		public TypeInformation<Row> getProducedType() {
+			return Types.ROW(
+					Types.INT,
+					Types.STRING,
+					Types.OBJECT_ARRAY(Types.STRING),
+					Types.OBJECT_ARRAY(Types.ROW(Types.INT, Types.STRING)),
+					Types.PRIMITIVE_ARRAY(Types.INT),
+					Types.GENERIC(Object.class)
+			);
+		}
+	}
+
+	/**
+	 * Not so simple POJO.
+	 */
 	public static class MyPojo {
 		public int id;
 		private String name;
@@ -281,8 +361,19 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 			}
 			return Tuple6.of(id, name, operationNames, operationTuples, operationIds, nullable);
 		}
+
+		public Row toRow() {
+			Row[] operationTuples = new Row[operations.length];
+			for (int i = 0; i < operations.length; ++i) {
+				operationTuples[i] = Row.of(operations[i].id, operations[i].name);
+			}
+			return Row.of(id, name, operationNames, operationTuples, operationIds, nullable);
+		}
 	}
 
+	/**
+	 * Another POJO.
+	 */
 	public static class MyOperation {
 		int id;
 		protected String name;
