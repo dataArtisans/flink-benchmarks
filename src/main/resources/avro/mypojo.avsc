@@ -1,0 +1,58 @@
+{"namespace": "org.apache.flink.benchmark.avro",
+ "type": "record",
+ "name": "MyPojo",
+ "fields": [
+     {
+     "name": "id",
+     "type": "int"
+     },
+     {
+     "name": "name",
+     "type": "string"
+     },
+     {
+     "name": "operationName",
+     "type":  {
+        "type":"array",
+        "items": "string"
+        }
+     },
+     {
+     "name": "operations",
+     "type": {
+         "type": "array",
+         "items":  {
+            "type": "record",
+            "name": "MyOperation",
+            "fields": [
+            {
+            "name": "id",
+            "type": "int"
+            },
+            {
+            "name": "name",
+            "type": "string"
+            }
+            ]
+
+         }
+     }
+     },
+     {
+     "name": "otherId1",
+     "type": "int"
+     },
+     {
+     "name": "otherId2",
+     "type": "int"
+     },
+     {
+     "name": "otherId3",
+     "type": "int"
+     },
+     {
+     "name": "nullable",
+     "type": ["null", "string"]
+     }
+ ]
+}
