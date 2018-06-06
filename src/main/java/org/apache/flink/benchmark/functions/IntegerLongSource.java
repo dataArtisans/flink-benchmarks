@@ -44,12 +44,11 @@ public class IntegerLongSource extends RichParallelSourceFunction<IntegerLongSou
         long counter = 0;
 
         while (running && counter < numberOfElements) {
-            synchronized (ctx.getCheckpointLock()) {
-                ctx.collectWithTimestamp(Record.of((int) (counter % numberOfKeys), counter), counter);
-                counter++;
-            }
+            ctx.collectBatchWithTimestamp(Record.of((int) (counter % numberOfKeys), counter), counter);
+            counter++;
         }
         running = false;
+        ctx.finishBatch();
     }
 
     @Override

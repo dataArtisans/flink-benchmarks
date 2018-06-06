@@ -18,12 +18,13 @@
 
 package org.apache.flink.benchmark;
 
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.benchmark.functions.LongSource;
 import org.apache.flink.benchmark.functions.MultiplyByTwo;
 import org.apache.flink.benchmark.functions.SumReduce;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -34,16 +35,17 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
 
-@OperationsPerInvocation(value = SumLongsBenchmark.RECORDS_PER_INVOCATION)
-public class SumLongsBenchmark extends BenchmarkBase {
+@OperationsPerInvocation(value = KeyByProcessBenchmark.RECORDS_PER_INVOCATION)
+public class KeyByProcessBenchmark extends BenchmarkBase {
 
-	public static final int RECORDS_PER_INVOCATION = 7_000_000;
+	public static final int RECORDS_PER_INVOCATION = 10_000_000;
+	public static final int KEYS = 16;
 
 	public static void main(String[] args)
 			throws RunnerException {
 		Options options = new OptionsBuilder()
 				.verbosity(VerboseMode.NORMAL)
-				.include(".*" + SumLongsBenchmark.class.getSimpleName() + ".*")
+				.include(".*" + KeyByProcessBenchmark.class.getSimpleName() + ".*")
 				.build();
 
 		new Runner(options).run();
@@ -53,14 +55,23 @@ public class SumLongsBenchmark extends BenchmarkBase {
 	public void benchmarkCount(FlinkEnvironmentContext context) throws Exception {
 
 		StreamExecutionEnvironment env = context.env;
-		env.enableCheckpointing(10);
 		DataStreamSource<Long> source = env.addSource(new LongSource(RECORDS_PER_INVOCATION));
 
 		source
 				.map(new MultiplyByTwo())
-				.windowAll(GlobalWindows.create())
+				.keyBy(new KeySelector<Long, Long>() {
+					@Override
+					public Long getKey(Long value) throws Exception {
+						return value % KEYS;
+//						return 0L;
+					}
+				})
 				.reduce(new SumReduce())
-				.printToErr();
+				.addSink(new SinkFunction<Long>() {
+					@Override
+					public void invoke(Long value) throws Exception {
+					}
+				});
 
 		env.execute();
 	}

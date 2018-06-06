@@ -22,7 +22,6 @@ import org.apache.flink.streaming.runtime.io.benchmark.StreamNetworkThroughputBe
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
@@ -65,8 +64,8 @@ public class StreamNetworkThroughputBenchmarkExecutor extends BenchmarkBase {
 	public static class MultiEnvironment extends StreamNetworkThroughputBenchmark {
 
 		//Ideally we would like to run 1,100ms, 1000,1ms, 1000,100ms. However 1000,1ms is too slow to execute.
-		@Param({"1,100ms", "100,1ms", "1000,100ms"})
-		public String channelsFlushTimeout = "100,100ms";
+//		@Param({"1,100ms", "100,1ms", "1000,100ms", "1000,1ms"})
+		public String channelsFlushTimeout = "1000,1ms";
 
 		//Do not spam continuous benchmarking with number of writers parameter.
 		//@Param({"1", "4"})

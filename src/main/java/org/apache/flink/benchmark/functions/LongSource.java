@@ -16,14 +16,13 @@ public class LongSource extends RichParallelSourceFunction<Long> {
         long counter = 0;
 
         while (running) {
-            synchronized (ctx.getCheckpointLock()) {
-                ctx.collect(counter);
-                counter++;
-                if (counter >= maxValue) {
-                    cancel();
-                }
+            ctx.collectBatch(counter);
+            counter++;
+            if (counter >= maxValue) {
+                cancel();
             }
         }
+        ctx.finishBatch();
     }
 
     @Override
