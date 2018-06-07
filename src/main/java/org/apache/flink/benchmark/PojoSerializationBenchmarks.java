@@ -282,10 +282,10 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 	public static class MyPojo {
 		public int id;
 		private String name;
-		private String[] operationNames;
-		private MyOperation[] operations;
-		private int[] operationIds;
-		private Object nullable;
+//		private String[] operationNames;
+//		private MyOperation[] operations;
+//		private int[] operationIds;
+//		private Object nullable;
 
 		public MyPojo() {
 		}
@@ -299,10 +299,10 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 				Object nullable) {
 			this.id = id;
 			this.name = name;
-			this.operationNames = operationNames;
-			this.operations = operations;
-			this.operationIds = operationIds;
-			this.nullable = nullable;
+//			this.operationNames = operationNames;
+//			this.operations = operations;
+//			this.operationIds = operationIds;
+//			this.nullable = nullable;
 		}
 
 		public int getId() {
@@ -321,54 +321,54 @@ public class PojoSerializationBenchmarks extends BenchmarkBase {
 			this.name = name;
 		}
 
-		public String[] getOperationNames() {
-			return operationNames;
-		}
-
-		public void setOperationNames(String[] operationNames) {
-			this.operationNames = operationNames;
-		}
-
-		public MyOperation[] getOperations() {
-			return operations;
-		}
-
-		public void setOperations(
-				MyOperation[] operations) {
-			this.operations = operations;
-		}
-
-		public int[] getOperationIds() {
-			return operationIds;
-		}
-
-		public void setOperationIds(int[] operationIds) {
-			this.operationIds = operationIds;
-		}
-
-		public Object getNullable() {
-			return nullable;
-		}
-
-		public void setNullable(Object nullable) {
-			this.nullable = nullable;
-		}
-
-		public Tuple6<Integer, String, String[], Tuple2<Integer, String>[], int[], Object> toTuple() {
-			Tuple2[] operationTuples = new Tuple2[operations.length];
-			for (int i = 0; i < operations.length; ++i) {
-				operationTuples[i] = Tuple2.of(operations[i].id, operations[i].name);
-			}
-			return Tuple6.of(id, name, operationNames, operationTuples, operationIds, nullable);
-		}
-
-		public Row toRow() {
-			Row[] operationTuples = new Row[operations.length];
-			for (int i = 0; i < operations.length; ++i) {
-				operationTuples[i] = Row.of(operations[i].id, operations[i].name);
-			}
-			return Row.of(id, name, operationNames, operationTuples, operationIds, nullable);
-		}
+//		public String[] getOperationNames() {
+//			return operationNames;
+//		}
+//
+//		public void setOperationNames(String[] operationNames) {
+//			this.operationNames = operationNames;
+//		}
+//
+//		public MyOperation[] getOperations() {
+//			return operations;
+//		}
+//
+//		public void setOperations(
+//				MyOperation[] operations) {
+//			this.operations = operations;
+//		}
+//
+//		public int[] getOperationIds() {
+//			return operationIds;
+//		}
+//
+//		public void setOperationIds(int[] operationIds) {
+//			this.operationIds = operationIds;
+//		}
+//
+//		public Object getNullable() {
+//			return nullable;
+//		}
+//
+//		public void setNullable(Object nullable) {
+//			this.nullable = nullable;
+//		}
+//
+//		public Tuple6<Integer, String, String[], Tuple2<Integer, String>[], int[], Object> toTuple() {
+//			Tuple2[] operationTuples = new Tuple2[operations.length];
+//			for (int i = 0; i < operations.length; ++i) {
+//				operationTuples[i] = Tuple2.of(operations[i].id, operations[i].name);
+//			}
+//			return Tuple6.of(id, name, operationNames, operationTuples, operationIds, nullable);
+//		}
+//
+//		public Row toRow() {
+//			Row[] operationTuples = new Row[operations.length];
+//			for (int i = 0; i < operations.length; ++i) {
+//				operationTuples[i] = Row.of(operations[i].id, operations[i].name);
+//			}
+//			return Row.of(id, name, operationNames, operationTuples, operationIds, nullable);
+//		}
 	}
 
 	/**
