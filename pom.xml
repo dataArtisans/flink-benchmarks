@@ -154,7 +154,7 @@ under the License.
 
 	<profiles>
 		<profile>
-			<id>travis</id>
+			<id>test</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
 			</activation>
@@ -197,41 +197,12 @@ under the License.
 							</arguments>
 						</configuration>
 					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-compiler-plugin</artifactId>
-						<version>${maven.compiler.version}</version>
-						<configuration>
-							<source>${java.version}</source>
-							<target>${java.version}</target>
-						</configuration>
-					</plugin>
-
-					<!-- Generate MyPojo class from avro schema -->
-					<plugin>
-						<groupId>org.apache.avro</groupId>
-						<artifactId>avro-maven-plugin</artifactId>
-						<version>${avro.version}</version>
-						<executions>
-							<execution>
-								<phase>generate-sources</phase>
-								<goals>
-									<goal>schema</goal>
-								</goals>
-								<configuration>
-									<sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
-									<!--<outputDirectory>${project.basedir}/src/main/java/</outputDirectory>-->
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
 				</plugins>
 			</build>
 		</profile>
 
 		<profile>
-			<id>jenkins</id>
+			<id>benchmark</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
 			</activation>
@@ -294,37 +265,41 @@ under the License.
 							</execution>
 						</executions>
 					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-compiler-plugin</artifactId>
-						<version>${maven.compiler.version}</version>
-						<configuration>
-							<source>${java.version}</source>
-							<target>${java.version}</target>
-						</configuration>
-					</plugin>
-
-					<!-- Generate MyPojo class from avro schema -->
-					<plugin>
-						<groupId>org.apache.avro</groupId>
-						<artifactId>avro-maven-plugin</artifactId>
-						<version>${avro.version}</version>
-						<executions>
-							<execution>
-								<phase>generate-sources</phase>
-								<goals>
-									<goal>schema</goal>
-								</goals>
-								<configuration>
-									<sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
-									<!--<outputDirectory>${project.basedir}/src/main/java/</outputDirectory>-->
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
 				</plugins>
 			</build>
 		</profile>
 	</profiles>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.compiler.version}</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+
+			<!-- Generate MyPojo class from avro schema -->
+			<plugin>
+				<groupId>org.apache.avro</groupId>
+				<artifactId>avro-maven-plugin</artifactId>
+				<version>${avro.version}</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>schema</goal>
+						</goals>
+						<configuration>
+							<sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
+							<!--<outputDirectory>${project.basedir}/src/main/java/</outputDirectory>-->
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>
