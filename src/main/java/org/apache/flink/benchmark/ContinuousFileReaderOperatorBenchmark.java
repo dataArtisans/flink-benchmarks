@@ -53,7 +53,6 @@ import java.nio.file.Paths;
 // bash script to generate 10 files with 100 random base64 strings each:
 // for f in $(seq 1 10); do for l in $(seq 1 100); do dd if=/dev/random count=2 | base64 >> src/main/resources/txt-10-100-1024/$f; done; done
 @OperationsPerInvocation(value = ContinuousFileReaderOperatorBenchmark.RECORDS_PER_INVOCATION)
-@Fork(value = 1)
 public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     public static final int RECORDS_PER_INVOCATION = 1000;
 
@@ -70,7 +69,7 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     @Param("")
     public String format;
 
-    @Param({"1", "2"})
+    @Param("1")
     public String parallelism;
 
     public static void main(String[] args)
