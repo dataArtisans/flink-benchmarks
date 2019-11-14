@@ -68,10 +68,10 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     public String path;
 
     @Param("")
-    public String fmt;
+    public String format;
 
     @Param({"1", "2"})
-    public String dop;
+    public String parallelism;
 
     public static void main(String[] args)
             throws RunnerException {
@@ -86,7 +86,7 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     @Setup
     public void setUp() {
         absPath = buildPath();
-        fileReader = chooseFormat(absPath.toString(), (fmt.isEmpty()) ? guessFormat(absPath) : fmt);
+        fileReader = chooseFormat(absPath.toString(), (format.isEmpty()) ? guessFormat(absPath) : format);
 
         Preconditions.checkArgument(absPath.exists(), "%s doesn't exist", absPath);
         if (absPath.isDirectory()) Preconditions.checkArgument(absPath.canExecute(), "can't list files in %s", absPath);
@@ -94,11 +94,11 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     }
 
     @Benchmark
-    public void readFs(FlinkEnvironmentContext context) throws Exception {
+    public void readFiles(FlinkEnvironmentContext context) throws Exception {
         StreamExecutionEnvironment env = context.env;
 
         env.enableCheckpointing(CHECKPOINT_INTERVAL_MS)
-                .setParallelism(Integer.parseInt(dop))
+                .setParallelism(Integer.parseInt(parallelism))
                 .readFile(fileReader, absPath.toString())
                 .addSink(new DiscardingSink<>());
 
