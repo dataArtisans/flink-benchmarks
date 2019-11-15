@@ -18,15 +18,15 @@
 package org.apache.flink.benchmark;
 
 import org.apache.flink.api.common.io.FileInputFormat;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.io.RowCsvInputFormat;
 import org.apache.flink.api.java.io.TextInputFormat;
 import org.apache.flink.core.fs.Path;
-import org.apache.flink.formats.avro.AvroInputFormat;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.util.Preconditions;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -38,20 +38,18 @@ import java.nio.file.Paths;
 
 /**
  * Measures simple file reading and, optionally, parsing operation.
- * Defaults to reading 1000 records from: <ol>
- *     <li>single userdata.avro file</li>
- *     <li>10 text files (100 lines each)</li>
- *     <li>100 text (smaller) files (10 lines each)</li></ol>
- * By default it runs with DOP 1 and then 2.
+ * Defaults to reading 100000 records from: <ol>
+ *     <li>100 text files (1000 lines each)</li>
+ *     <li>1000 text (smaller) files (100 lines each)</li></ol>
  * <p>
  * Parameters: <ul>
  *     <li>path - folder or file; if not absolute, it's assumed relative to src/main/resources </li>
- *     <li>fmt - format hint (optional: if not given it is inferred from file extension or starting of folder name)</li>
- *     <li>dop - degree of parallelism.</li>
+ *     <li>parallelism - degree of parallelism.</li>
  * </ul>
  */
-// bash script to generate 10 files with 100 random base64 strings each:
-// for f in $(seq 1 10); do for l in $(seq 1 100); do dd if=/dev/random count=2 | base64 >> src/main/resources/txt-10-100-1024/$f; done; done
+// bash script to generate 100 files with 1000 random base64 lines each:
+// for f in $(seq 1 100); do for l in $(seq 1 1000); do dd if=/dev/random count=1 | base64 >> src/main/resources/txt-100-1000-10/$f; done; done
+// for f in $(seq 1 1000); do for l in $(seq 1 100); do dd if=/dev/random count=1 | base64 >> src/main/resources/txt-1000-100-10/$f; done; done
 @OperationsPerInvocation(value = ContinuousFileReaderOperatorBenchmark.RECORDS_PER_INVOCATION)
 public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     public static final int RECORDS_PER_INVOCATION = 1000;
@@ -63,11 +61,8 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     private File absPath;
     private FileInputFormat<?> fileReader;
 
-    @Param({"avro/userdata.avro", "txt-10-100-1024", "txt-100-10-1024"})
+    @Param({"txt-100-1000-10", "txt-1000-100-10"})
     public String path;
-
-    @Param("")
-    public String format;
 
     @Param("1")
     public String parallelism;
@@ -85,11 +80,10 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     @Setup
     public void setUp() {
         absPath = buildPath();
-        fileReader = chooseFormat(absPath.toString(), (format.isEmpty()) ? guessFormat(absPath) : format);
-
         Preconditions.checkArgument(absPath.exists(), "%s doesn't exist", absPath);
         if (absPath.isDirectory()) Preconditions.checkArgument(absPath.canExecute(), "can't list files in %s", absPath);
         else Preconditions.checkArgument(absPath.canRead(), "can't read %s", absPath);
+        fileReader = new TextInputFormat(new Path(absPath.toString()));
     }
 
     @Benchmark
@@ -107,26 +101,6 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     private File buildPath() {
         java.nio.file.Path p = this.path.startsWith("/") ? Paths.get(this.path) : Paths.get(BASE_DIR, this.path);
         return p.toAbsolutePath().toFile();
-    }
-
-    private static String guessFormat(File path) {
-        return path.isFile() ?
-                path.toString().replaceAll(".*\\.", "") :
-                path.toString().replaceAll(".*/", "").replaceAll("-.*", "");
-    }
-
-    private static FileInputFormat<?> chooseFormat(String file, String ext) {
-        switch (ext.toLowerCase()) {
-            case "avro":
-                return new AvroInputFormat<>(new Path(file), Object.class);
-            case "txt":
-            case "text":
-                return new TextInputFormat(new Path(file));
-            case "csv":
-                return new RowCsvInputFormat(new Path(file), new TypeInformation[]{TypeInformation.of(String.class)});
-            default:
-                throw new IllegalArgumentException(String.format("can't infer file format for %s using %s", file, ext));
-        }
     }
 
 }
