@@ -61,7 +61,7 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
         env
                 .enableCheckpointing(100)
                 .setParallelism(1)
-                .addSource(buildSourceFun())
+                .addSource(new MockSourceFunction())
                 .transform("fileReader", TypeInformation.of(String.class),
                         new ContinuousFileReaderOperator<>(new MockInputFormat()))
                 .addSink(new DiscardingSink<>());
@@ -69,26 +69,24 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
         env.execute();
     }
 
-    private SourceFunction<TimestampedFileInputSplit> buildSourceFun() {
-        return new SourceFunction<TimestampedFileInputSplit>() {
-            private volatile boolean isRunning = true;
-            private int count = 0;
+    private static class MockSourceFunction implements SourceFunction<TimestampedFileInputSplit> {
+        private volatile boolean isRunning = true;
+        private int count = 0;
 
-            @Override
-            public void run(SourceContext<TimestampedFileInputSplit> ctx) {
-                while (isRunning && count < SPLITS_PER_INVOCATION) {
-                    count++;
-                    synchronized (ctx.getCheckpointLock()) {
-                        ctx.collect(SPLIT);
-                    }
+        @Override
+        public void run(SourceContext<TimestampedFileInputSplit> ctx) {
+            while (isRunning && count < SPLITS_PER_INVOCATION) {
+                count++;
+                synchronized (ctx.getCheckpointLock()) {
+                    ctx.collect(SPLIT);
                 }
             }
+        }
 
-            @Override
-            public void cancel() {
-                isRunning = false;
-            }
-        };
+        @Override
+        public void cancel() {
+            isRunning = false;
+        }
     }
 
     private static class MockInputFormat extends FileInputFormat<String> {
