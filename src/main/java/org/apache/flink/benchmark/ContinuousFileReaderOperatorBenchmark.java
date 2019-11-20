@@ -39,7 +39,7 @@ import org.openjdk.jmh.runner.options.VerboseMode;
 @OperationsPerInvocation(value = ContinuousFileReaderOperatorBenchmark.RECORDS_PER_INVOCATION)
 public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     private static final int SPLITS_PER_INVOCATION = 100;
-    private static final int LINES_PER_SPLIT = 20_000_000;
+    private static final int LINES_PER_SPLIT = 175_000;
     public static final int RECORDS_PER_INVOCATION = SPLITS_PER_INVOCATION * LINES_PER_SPLIT;
 
     private static final TimestampedFileInputSplit SPLIT = new TimestampedFileInputSplit(0, 0, new Path("."), 0, 0, new String[]{});
@@ -107,6 +107,7 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
 
         @Override
         public void open(FileInputSplit fileSplit) {
+            count = 0;
             // prevent super from accessing file
         }
 
