@@ -56,7 +56,7 @@ public class ContinuousFileReaderOperatorBenchmark extends BenchmarkBase {
     }
 
     @Benchmark
-    public void readFiles(FlinkEnvironmentContext context) throws Exception {
+    public void readFileSplit(FlinkEnvironmentContext context) throws Exception {
         StreamExecutionEnvironment env = context.env;
         env
                 .enableCheckpointing(100)
