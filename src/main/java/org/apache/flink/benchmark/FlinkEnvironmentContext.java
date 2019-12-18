@@ -41,6 +41,8 @@ public class FlinkEnvironmentContext {
     protected Configuration createConfiguration() {
         final Configuration configuration = new Configuration();
         configuration.setInteger(NettyShuffleEnvironmentOptions.NETWORK_NUM_BUFFERS, NUM_NETWORK_BUFFERS);
+        configuration.setString("taskmanager.network.memory.max", "8m");
+        configuration.setString("taskmanager.network.memory.min", "4m");
         return configuration;
     }
 
