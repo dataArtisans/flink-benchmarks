@@ -5,11 +5,9 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer;
 import org.apache.flink.benchmark.BenchmarkBase;
 import org.apache.flink.benchmark.SerializationFrameworkMiniBenchmarks;
-import org.apache.flink.core.memory.DataInputView;
-import org.apache.flink.core.memory.DataInputViewStreamWrapper;
-import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
+import org.apache.flink.core.memory.*;
 import org.apache.flink.formats.avro.typeutils.AvroSerializer;
+import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -17,7 +15,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
 import org.openjdk.jmh.annotations.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -39,13 +36,16 @@ public class PojoSerializationBenchmark extends BenchmarkBase {
     TypeSerializer<org.apache.flink.benchmark.avro.MyPojo> avroSerializer =
             new AvroSerializer<>(org.apache.flink.benchmark.avro.MyPojo.class);
 
-    ByteArrayInputStream pojoBuffer;
-    ByteArrayInputStream avroBuffer;
-    ByteArrayInputStream kryoBuffer;
+    OffheapInputWrapper pojoBuffer;
+    OffheapInputWrapper avroBuffer;
+    OffheapInputWrapper kryoBuffer;
 
+    DataOutputSerializer stream = new DataOutputSerializer(128);
+
+    public static final int INVOCATIONS = 1000;
 
     @Setup
-    public void setup() throws IOException {
+    public void setup() throws Exception {
         pojo = new SerializationFrameworkMiniBenchmarks.MyPojo(
                 0,
                 "myName",
@@ -70,9 +70,9 @@ public class PojoSerializationBenchmark extends BenchmarkBase {
                 2,
                 3,
                 "null");
-        pojoBuffer = new ByteArrayInputStream(write(pojoSerializer, pojo));
-        avroBuffer = new ByteArrayInputStream(write(avroSerializer, avroPojo));
-        kryoBuffer = new ByteArrayInputStream(write(kryoSerializer, pojo));
+        pojoBuffer = new OffheapInputWrapper(writePayload(pojoSerializer, pojo));
+        avroBuffer = new OffheapInputWrapper(writePayload(avroSerializer, avroPojo));
+        kryoBuffer = new OffheapInputWrapper(writePayload(kryoSerializer, pojo));
     }
 
     public static void main(String[] args)
@@ -86,42 +86,69 @@ public class PojoSerializationBenchmark extends BenchmarkBase {
     }
 
     @Benchmark
-    public byte[] writePojo() throws IOException {
-        return write(pojoSerializer, pojo);
+    @OperationsPerInvocation(INVOCATIONS)
+    public int writePojo() throws IOException {
+        stream.pruneBuffer();
+        for (int i = 0; i < INVOCATIONS; i++) {
+            pojoSerializer.serialize(pojo, stream);
+        }
+        return stream.length();
     }
 
     @Benchmark
-    public byte[] writeAvro() throws IOException {
-        return write(avroSerializer, avroPojo);
+    @OperationsPerInvocation(INVOCATIONS)
+    public int writeAvro() throws IOException {
+        stream.pruneBuffer();
+        for (int i = 0; i < INVOCATIONS; i++) {
+            avroSerializer.serialize(avroPojo, stream);
+        }
+        return stream.length();
     }
 
     @Benchmark
-    public byte[] writeKryo() throws IOException {
-        return write(kryoSerializer, pojo);
+    @OperationsPerInvocation(INVOCATIONS)
+    public int writeKryo() throws IOException {
+        stream.pruneBuffer();
+        for (int i = 0; i < INVOCATIONS; i++) {
+            kryoSerializer.serialize(pojo, stream);
+        }
+        return stream.length();
     }
 
     @Benchmark
-    public SerializationFrameworkMiniBenchmarks.MyPojo readPojo() throws IOException {
+    @OperationsPerInvocation(INVOCATIONS)
+    public void readPojo(Blackhole bh) throws Exception {
         pojoBuffer.reset();
-        return pojoSerializer.deserialize(new DataInputViewStreamWrapper(pojoBuffer));
+        for (int i = 0; i < INVOCATIONS; i++) {
+            bh.consume(pojoSerializer.deserialize(pojoBuffer.dataInput));
+        }
     }
 
     @Benchmark
-    public SerializationFrameworkMiniBenchmarks.MyPojo readKryo() throws IOException {
+    @OperationsPerInvocation(INVOCATIONS)
+    public void readKryo(Blackhole bh) throws Exception {
         kryoBuffer.reset();
-        return kryoSerializer.deserialize(new DataInputViewStreamWrapper(kryoBuffer));
+        for (int i = 0; i < INVOCATIONS; i++) {
+            bh.consume(kryoSerializer.deserialize(kryoBuffer.dataInput));
+        }
     }
 
     @Benchmark
-    public org.apache.flink.benchmark.avro.MyPojo readAvro() throws IOException {
+    @OperationsPerInvocation(INVOCATIONS)
+    public void readAvro(Blackhole bh) throws Exception {
         avroBuffer.reset();
-        return avroSerializer.deserialize(new DataInputViewStreamWrapper(avroBuffer));
+        for (int i = 0; i < INVOCATIONS; i++) {
+            bh.consume(avroSerializer.deserialize(avroBuffer.dataInput));
+        }
     }
 
-    private <T> byte[] write(TypeSerializer<T> serializer, T value) throws IOException {
+    private <T> byte[] writePayload(TypeSerializer<T> serializer, T value) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         DataOutputView out = new DataOutputViewStreamWrapper(buffer);
-        serializer.serialize(value, out);
+        for (int i = 0; i < INVOCATIONS; i++) {
+            serializer.serialize(value, out);
+        }
+        buffer.close();
         return buffer.toByteArray();
     }
 }
