@@ -56,8 +56,6 @@ public class BackendUtils {
         File recoveryBaseDir = prepareDirectory(recoveryDirName, rootDir);
         File dbPathFile = prepareDirectory(dbDirName, rootDir);
         RocksDBResourceContainer resourceContainer = new RocksDBResourceContainer();
-        resourceContainer.getDbOptions().setCreateIfMissing(true);
-
         ColumnFamilyOptions columnOptions = new ColumnFamilyOptions();
         ExecutionConfig executionConfig = new ExecutionConfig();
         RocksDBKeyedStateBackendBuilder<Long> builder = new RocksDBKeyedStateBackendBuilder<>(
