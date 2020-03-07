@@ -98,8 +98,8 @@ public class SerializationFrameworkAllBenchmarks extends SerializationFrameworkM
 		env.setParallelism(4);
 		ExecutionConfig executionConfig = env.getConfig();
 		executionConfig.enableForceKryo();
-		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.avro.MyPojo.class, TBaseSerializer.class);
-		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.avro.MyOperation.class, TBaseSerializer.class);
+		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.thrift.MyPojo.class, TBaseSerializer.class);
+		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.thrift.MyOperation.class, TBaseSerializer.class);
 
 		env.addSource(new ThriftPojoSource(RECORDS_PER_INVOCATION, 10))
 				.rebalance()
@@ -115,10 +115,10 @@ public class SerializationFrameworkAllBenchmarks extends SerializationFrameworkM
 		env.setParallelism(4);
 		ExecutionConfig executionConfig = env.getConfig();
 		executionConfig.enableForceKryo();
-		executionConfig.registerKryoType(org.apache.flink.benchmark.avro.MyPojo.class);
-		executionConfig.registerKryoType(org.apache.flink.benchmark.avro.MyOperation.class);
-		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.avro.MyPojo.class, TBaseSerializer.class);
-		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.avro.MyOperation.class, TBaseSerializer.class);
+		executionConfig.registerKryoType(org.apache.flink.benchmark.thrift.MyPojo.class);
+		executionConfig.registerKryoType(org.apache.flink.benchmark.thrift.MyOperation.class);
+		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.thrift.MyPojo.class, TBaseSerializer.class);
+		executionConfig.addDefaultKryoSerializer(org.apache.flink.benchmark.thrift.MyOperation.class, TBaseSerializer.class);
 
 		env.addSource(new ThriftPojoSource(RECORDS_PER_INVOCATION, 10))
 				.rebalance()
