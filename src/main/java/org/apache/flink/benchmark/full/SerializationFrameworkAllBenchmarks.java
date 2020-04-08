@@ -45,7 +45,7 @@ public class SerializationFrameworkAllBenchmarks extends SerializationFrameworkM
 	public static void main(String[] args) throws RunnerException {
 		Options options = new OptionsBuilder()
 				.verbosity(VerboseMode.NORMAL)
-				.include(".*" + SerializationFrameworkAllBenchmarks.class.getSimpleName() + ".*")
+				.include(".*" + SerializationFrameworkAllBenchmarks.class.getCanonicalName() + ".*")
 				.build();
 
 		new Runner(options).run();

@@ -79,7 +79,7 @@ public class PojoSerializationBenchmark extends BenchmarkBase {
             throws RunnerException {
         Options options = new OptionsBuilder()
                 .verbosity(VerboseMode.NORMAL)
-                .include(".*" + PojoSerializationBenchmark.class.getSimpleName() + ".*")
+                .include(".*" + PojoSerializationBenchmark.class.getCanonicalName() + ".*")
                 .build();
 
         new Runner(options).run();
