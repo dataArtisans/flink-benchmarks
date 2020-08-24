@@ -22,10 +22,8 @@ import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.benchmark.BenchmarkBase;
-import org.apache.flink.core.memory.DataInputView;
-import org.apache.flink.core.memory.DataInputViewStreamWrapper;
-import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
+import org.apache.flink.core.memory.*;
+import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -33,8 +31,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.VerboseMode;
 import org.openjdk.jmh.annotations.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -68,11 +64,13 @@ public class StringSerializationBenchmark extends BenchmarkBase {
 
     ExecutionConfig config = new ExecutionConfig();
     TypeSerializer<String> serializer = TypeInformation.of(String.class).createSerializer(config);
-    ByteArrayInputStream serializedBuffer;
-    DataInputView serializedStream;
+    DataOutputSerializer serializedStream;
+    OffheapInputWrapper offheapInput;
+
+    public static final int INVOCATIONS = 1000;
 
     @Setup
-    public void setup() throws IOException {
+    public void setup() throws Exception {
         length = Integer.parseInt(lengthStr);
         switch (type) {
             case "ascii":
@@ -87,23 +85,32 @@ public class StringSerializationBenchmark extends BenchmarkBase {
             default:
                 throw new IllegalArgumentException(type + "charset is not supported");
         }
-        byte[] stringBytes = stringWrite();
-        serializedBuffer = new ByteArrayInputStream(stringBytes);
-        serializedStream = new DataInputViewStreamWrapper(serializedBuffer);
+        serializedStream = new DataOutputSerializer(128);
+        DataOutputSerializer payloadWriter = new DataOutputSerializer(128);
+        for (int i = 0; i < INVOCATIONS; i++) {
+            serializer.serialize(input, payloadWriter);
+        }
+        byte[] payload = payloadWriter.getCopyOfBuffer();
+        offheapInput = new OffheapInputWrapper(payload);
     }
 
     @Benchmark
-    public byte[] stringWrite() throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        DataOutputView out = new DataOutputViewStreamWrapper(buffer);
-        serializer.serialize(input, out);
-        return buffer.toByteArray();
+    @OperationsPerInvocation(INVOCATIONS)
+    public int stringWrite() throws IOException {
+        serializedStream.pruneBuffer();
+        for (int i = 0; i < INVOCATIONS; i++) {
+            serializer.serialize(input, serializedStream);
+        }
+        return serializedStream.length();
     }
 
     @Benchmark
-    public String stringRead() throws IOException {
-        serializedBuffer.reset();
-        return serializer.deserialize(serializedStream);
+    @OperationsPerInvocation(INVOCATIONS)
+    public void stringRead(Blackhole bh) throws Exception {
+        offheapInput.reset();
+        for (int i = 0; i < INVOCATIONS; i++) {
+            bh.consume(serializer.deserialize(offheapInput.dataInput));
+        }
     }
 
     private String generate(char[] charset, int length) {
